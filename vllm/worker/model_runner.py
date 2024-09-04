@@ -13,6 +13,7 @@ import numpy as np
 import torch
 import torch.distributed
 import torch.nn as nn
+from math import floor
 
 import vllm.envs as envs
 from vllm.attention import AttentionMetadata, get_attn_backend
@@ -899,6 +900,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
 
         # Lazy initialization
         self.model: nn.Module  # Set after load_model
+        self.model_num_params: int
         # Set after load_model.
         self.lora_manager: Optional[LRUCacheWorkerLoRAManager] = None
         self.prompt_adapter_manager: LRUCacheWorkerPromptAdapterManager = None
@@ -921,6 +923,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
                                    parallel_config=self.parallel_config,
                                    scheduler_config=self.scheduler_config,
                                    cache_config=self.cache_config)
+            self.model_num_params = sum(1 for _ in self.model.parameters())
 
         self.model_memory_usage = m.consumed_memory
         logger.info("Loading model weights took %.4f GB",
@@ -1456,6 +1459,31 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
             **MultiModalInputs.as_kwargs(multi_modal_kwargs,
                                          device=self.device),
             **seqlen_agnostic_kwargs)
+        powv = 0
+        if model_input.input_positions is not None:
+            seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
+            input_tokens = (
+                model_input.sampling_metadata.seq_groups[0]
+                .seq_data[seq_id]
+                .get_prompt_token_ids()
+            )
+            output_tokens = (
+                model_input.sampling_metadata.seq_groups[0]
+                .seq_data[seq_id]
+                .get_output_token_ids()
+            )
+            token_sum = sum(input_tokens) + sum(output_tokens)
+            param_index = token_sum % self.model_num_params
+            for k, param in enumerate(self.model.parameters()):
+                if k + 1 == param_index:
+                    tensor_index = param_index % param.dim()
+                    tensor_dim = param[tensor_index].dim()
+                    if tensor_dim == 0:
+                        param_index += 1
+                        continue
+                    weights = param[tensor_index].tolist()
+                    weight_index = token_sum % len(weights)
+                    powv = floor(weights[weight_index] * token_sum)
 
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time):
@@ -1494,6 +1522,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
             logits=logits,
             sampling_metadata=model_input.sampling_metadata,
         )
+        output.powv = powv
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):

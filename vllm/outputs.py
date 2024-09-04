@@ -100,6 +100,7 @@ class RequestOutput:
         lora_request: Optional[LoRARequest] = None,
         encoder_prompt: Optional[str] = None,
         encoder_prompt_token_ids: Optional[List[int]] = None,
+        powv: Optional[int] = None
     ) -> None:
         self.request_id = request_id
         self.prompt = prompt
@@ -111,6 +112,7 @@ class RequestOutput:
         self.lora_request = lora_request
         self.encoder_prompt = encoder_prompt
         self.encoder_prompt_token_ids = encoder_prompt_token_ids
+        self.powv: Optional[int] = powv
 
     @classmethod
     def from_seq_group(cls, seq_group: SequenceGroup) -> "RequestOutput":
@@ -198,6 +200,7 @@ class EmbeddingRequestOutput:
         self.prompt_token_ids = prompt_token_ids
         self.finished = finished
         self.outputs = outputs
+        self.powv: Optional[int] = None
 
     @classmethod
     def from_seq_group(cls,
