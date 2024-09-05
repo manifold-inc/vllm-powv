@@ -1308,6 +1308,7 @@ class LLMEngine:
                 for o in outputs:
                     if (isinstance(o, SamplerOutput)
                             and seq_group.metrics is not None):
+                        seq_group.powv = o.powv
                         if seq_group.metrics.model_forward_time is not None:
                             seq_group.metrics.model_forward_time += (
                                 o.model_forward_time)
