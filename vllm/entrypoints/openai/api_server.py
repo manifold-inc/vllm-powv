@@ -280,6 +280,19 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
+@router.post("/v1/chat/completions/verify")
+async def verify_chat_completion(request: TokenizeRequest,
+                                 powv: int):
+    generator = await openai_serving_tokenization.create_tokenize(request)
+    if isinstance(generator, ErrorResponse):
+        return JSONResponse(content=generator.model_dump(),
+                            status_code=generator.code)
+    elif not isinstance(generator, TokenizeResponse):
+        return JSONResponse(content=generator.model_dump(), status_code=500)
+    print(generator.tokens)
+
+
+
 @router.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest,
                                  raw_request: Request):
