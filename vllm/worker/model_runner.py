@@ -1472,18 +1472,21 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                 .seq_data[seq_id]
                 .get_output_token_ids()
             )
-            token_sum = sum(input_tokens) + sum(output_tokens)
+            input_sum = sum(input_tokens)
+            output_sum = sum(output_tokens)
+            token_sum = input_sum + output_sum
             param_index = token_sum % self.model_num_params
             for k, param in enumerate(self.model.parameters()):
-                if k + 1 == param_index:
-                    tensor_index = param_index % param.dim()
-                    tensor_dim = param[tensor_index].dim()
-                    if tensor_dim == 0:
-                        param_index += 1
-                        continue
+                if k != param_index:
+                    continue
+                if param.dim() == 1:
+                    weights = param.tolist()
+                else:
+                    tensor_index = output_sum % param.size()[0]
                     weights = param[tensor_index].tolist()
-                    weight_index = token_sum % len(weights)
-                    powv = floor(weights[weight_index] * token_sum)
+                weight_index = input_sum % len(weights)
+                powv = floor(weights[weight_index] * token_sum)
+                break
 
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time):
