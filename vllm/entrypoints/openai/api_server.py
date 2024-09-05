@@ -34,9 +34,9 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               DetokenizeRequest,
                                               DetokenizeResponse,
                                               EmbeddingRequest,
-                                              EmbeddingResponse, ErrorResponse,
+                                              EmbeddingResponse, ErrorResponse, TokenizeChatRequest,
                                               TokenizeRequest,
-                                              TokenizeResponse)
+                                              TokenizeResponse, VerifyChatCompletionResponse)
 # yapf: enable
 from vllm.entrypoints.openai.rpc.client import AsyncEngineRPCClient
 from vllm.entrypoints.openai.rpc.server import run_rpc_server
@@ -280,16 +280,28 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
-@router.post("/v1/chat/completions/verify")
-async def verify_chat_completion(request: TokenizeRequest,
-                                 powv: int):
-    generator = await openai_serving_tokenization.create_tokenize(request)
+async def verify_chat_completion(req: VerifyChatCompletionResponse):
+    tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
+    generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
     if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(),
-                            status_code=generator.code)
+         return JSONResponse(content=generator.model_dump(),
+                             status_code=generator.code)
     elif not isinstance(generator, TokenizeResponse):
-        return JSONResponse(content=generator.model_dump(), status_code=500)
-    print(generator.tokens)
+         return JSONResponse(content=generator.model_dump(), status_code=500)
+    (
+        lora_request,
+        _,
+    ) = openai_serving_tokenization._maybe_get_adapters(tokenize_request)
+
+    tokenizer = await openai_serving_tokenization.async_engine_client.get_tokenizer(lora_request)
+    prompt_tokens = generator.tokens
+    response_tokens = openai_serving_tokenization._tokenize_prompt_input(
+        tokenize_request,
+        tokenizer,
+        req.response,
+        add_special_tokens=False,
+    )['prompt_token_ids']
+    return JSONResponse(content=[prompt_tokens, response_tokens])
 
 
 

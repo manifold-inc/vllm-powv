@@ -863,6 +863,13 @@ class TokenizeChatRequest(OpenAIBaseModel):
     add_special_tokens: bool = Field(default=False)
 
 
+class VerifyChatCompletionResponse(OpenAIBaseModel):
+    model: str
+    messages: List[ChatCompletionMessageParam]
+    response: str
+    powv: int
+
+
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]
 
 
