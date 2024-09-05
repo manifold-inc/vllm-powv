@@ -280,6 +280,7 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
+@router.post("/v1/chat/completions/verify")
 async def verify_chat_completion(req: VerifyChatCompletionResponse):
     tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
