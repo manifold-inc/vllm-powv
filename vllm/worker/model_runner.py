@@ -913,6 +913,47 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
         self.sampling_metadata_cache: SamplingMetadataCache = \
             SamplingMetadataCache()
 
+    def get_powv(
+        self,
+        model_input: ModelInputForGPUWithSamplingMetadata,
+    ) -> Optional[int]:
+        """
+        Calculates Proof of Work value that can be used to verify the outputs
+        of a model were made with the model claimed.
+        """
+        if(model_input.input_positions is None):
+            return None
+        if(model_input.sampling_metadata is None):
+            return None
+        powv = 0
+        seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
+        input_tokens = (
+            model_input.sampling_metadata.seq_groups[0]
+            .seq_data[seq_id]
+            .get_prompt_token_ids()
+        )
+        output_tokens = (
+            model_input.sampling_metadata.seq_groups[0]
+            .seq_data[seq_id]
+            .get_output_token_ids()
+        )
+        input_sum = sum(input_tokens)
+        output_sum = sum(output_tokens)
+        token_sum = input_sum + output_sum
+        param_index = token_sum % self.model_num_params
+        for k, param in enumerate(self.model.parameters()):
+            if k != param_index:
+                continue
+            if param.dim() == 1:
+                weights = param.tolist()
+            else:
+                tensor_index = output_sum % param.size()[0]
+                weights = param[tensor_index].tolist()
+            weight_index = input_sum % len(weights)
+            powv = floor(weights[weight_index] * token_sum)
+            break
+        return powv
+
     def load_model(self) -> None:
         logger.info("Starting to load model %s...", self.model_config.model)
         with CudaMemoryProfiler() as m:
@@ -1360,47 +1401,6 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                 attn_backend=self.attn_backend,
             )
         return model_input
-
-    def get_powv(
-        self,
-        model_input: ModelInputForGPUWithSamplingMetadata,
-    ) -> Optional[int]:
-        """
-        Calculates Proof of Work value that can be used to verify the outputs
-        of a model were made with the model claimed.
-        """
-        if(model_input.input_positions is None):
-            return None
-        if(model_input.sampling_metadata is None):
-            return None
-        powv = 0
-        seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
-        input_tokens = (
-            model_input.sampling_metadata.seq_groups[0]
-            .seq_data[seq_id]
-            .get_prompt_token_ids()
-        )
-        output_tokens = (
-            model_input.sampling_metadata.seq_groups[0]
-            .seq_data[seq_id]
-            .get_output_token_ids()
-        )
-        input_sum = sum(input_tokens)
-        output_sum = sum(output_tokens)
-        token_sum = input_sum + output_sum
-        param_index = token_sum % self.model_num_params
-        for k, param in enumerate(self.model.parameters()):
-            if k != param_index:
-                continue
-            if param.dim() == 1:
-                weights = param.tolist()
-            else:
-                tensor_index = output_sum % param.size()[0]
-                weights = param[tensor_index].tolist()
-            weight_index = input_sum % len(weights)
-            powv = floor(weights[weight_index] * token_sum)
-            break
-        return powv
 
     def prepare_model_input(
         self,
