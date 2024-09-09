@@ -1,8 +1,10 @@
-from typing import (AsyncGenerator, List, Mapping, Optional, Protocol,
+import types
+from typing import (AsyncGenerator, Coroutine, List, Mapping, Optional, Protocol,
                     runtime_checkable)
 
 from vllm.config import DecodingConfig, ModelConfig
 from vllm.core.scheduler import SchedulerOutputs
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 from vllm.inputs.data import PromptInputs
 from vllm.lora.request import LoRARequest
 from vllm.model_executor.layers.sampler import SamplerOutput
@@ -32,6 +34,13 @@ class AsyncEngineClient(Protocol):
     @property
     def limit_concurrency(self) -> Optional[int]:
         """Maximum number of concurrently running requests."""
+
+    def verify(
+        self,
+        inputs: VerifyChatCompletion,
+    ) -> Coroutine[None, None, int]:
+        """Verify outputs for a request"""
+        ...
 
     def generate(
         self,

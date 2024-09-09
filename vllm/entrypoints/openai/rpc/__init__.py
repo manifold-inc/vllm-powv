@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Mapping, Optional, Union
+from typing import Mapping, Optional, Sequence, Union
 
 from vllm.inputs import PromptInputs
 from vllm.lora.request import LoRARequest
@@ -28,6 +28,13 @@ class RPCGenerateRequest:
 
 
 @dataclass
+class RPCVerifyResponse:
+    model: str
+    input_tokens: Sequence[int]
+    response_tokens: Sequence[int]
+
+
+@dataclass
 class RPCAbortRequest:
     request_id: str
 
@@ -47,4 +54,4 @@ class RPCUtilityRequest(Enum):
 
 
 RPC_REQUEST_TYPE = Union[RPCGenerateRequest, RPCAbortRequest,
-                         RPCUtilityRequest]
+                         RPCUtilityRequest, RPCVerifyResponse]

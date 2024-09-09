@@ -11,6 +11,7 @@ from typing import Set, Tuple, Type, Union
 import torch
 from typing_extensions import TypeVar, assert_never
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.config import (CacheConfig, DecodingConfig, DeviceConfig,
                          EngineConfig, LoadConfig, LoRAConfig, ModelConfig,
@@ -1036,6 +1037,11 @@ class LLMEngine:
 
         return self.input_processor(model_inputs)
 
+    def verify_chat_completion(
+            self,
+            inputs: VerifyChatCompletion):
+        return self.model_executor.verify_output(inputs)
+
     def add_request(
         self,
         request_id: str,
@@ -1308,6 +1314,7 @@ class LLMEngine:
                 for o in outputs:
                     if (isinstance(o, SamplerOutput)
                             and seq_group.metrics is not None):
+                        seq_group.powv = o.powv
                         if seq_group.metrics.model_forward_time is not None:
                             seq_group.metrics.model_forward_time += (
                                 o.model_forward_time)

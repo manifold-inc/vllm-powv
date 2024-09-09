@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Iterator, Mapping, Optional
 from uuid import uuid4
 
 import cloudpickle
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import zmq
 import zmq.asyncio
 from zmq import Frame  # type: ignore[attr-defined]
@@ -17,7 +18,7 @@ from vllm.entrypoints.openai.rpc import (RPC_REQUEST_TYPE,
                                          VLLM_RPC_SOCKET_LIMIT_CUTOFF,
                                          VLLM_RPC_SUCCESS_STR,
                                          VLLM_RPC_ZMQ_HWM, RPCAbortRequest,
-                                         RPCGenerateRequest, RPCUtilityRequest)
+                                         RPCGenerateRequest, RPCUtilityRequest, RPCVerifyResponse)
 # yapf: enable
 from vllm.envs import VLLM_RPC_GET_DATA_TIMEOUT_MS
 from vllm.inputs import PromptInputs
@@ -198,7 +199,7 @@ class AsyncEngineRPCClient:
         finally:
             socket.close(linger=0)
 
-    async def _send_get_data_rpc_request(self, request: RPCUtilityRequest,
+    async def _send_get_data_rpc_request(self, request: RPC_REQUEST_TYPE,
                                          expected_type: Any,
                                          error_message: str) -> Any:
         """Send an RPC request that is expecting data back."""
@@ -370,6 +371,15 @@ class AsyncEngineRPCClient:
     @property
     def errored(self) -> bool:
         return self._errored
+
+    async def verify(self, inputs: VerifyChatCompletion):
+        return await self._send_get_data_rpc_request(
+            RPCVerifyResponse(
+                model=inputs.model, 
+                input_tokens=inputs.input_tokens,
+                response_tokens=inputs.response_tokens),
+            expected_type=Optional[int],
+            error_message="Failed to verify response")
 
     async def generate(
         self,

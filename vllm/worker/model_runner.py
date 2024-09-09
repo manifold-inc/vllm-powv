@@ -13,7 +13,9 @@ import numpy as np
 import torch
 import torch.distributed
 import torch.nn as nn
+from math import floor
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.attention import AttentionMetadata, get_attn_backend
 from vllm.attention.backends.abstract import AttentionState
@@ -899,6 +901,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
 
         # Lazy initialization
         self.model: nn.Module  # Set after load_model
+        self.model_num_params: int
         # Set after load_model.
         self.lora_manager: Optional[LRUCacheWorkerLoRAManager] = None
         self.prompt_adapter_manager: LRUCacheWorkerPromptAdapterManager = None
@@ -911,6 +914,32 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
         self.sampling_metadata_cache: SamplingMetadataCache = \
             SamplingMetadataCache()
 
+    def get_powv(
+        self,
+        input: VerifyChatCompletion,
+    ) -> int:
+        """
+        Calculates Proof of Work value that can be used to verify the outputs
+        of a model were made with the model claimed.
+        """
+        powv = 0
+        input_sum = sum(input.input_tokens)
+        output_sum = sum(input.response_tokens)
+        token_sum = input_sum + output_sum
+        param_index = token_sum % self.model_num_params
+        for k, param in enumerate(self.model.parameters()):
+            if k != param_index:
+                continue
+            if param.dim() == 1:
+                weights = param.tolist()
+            else:
+                tensor_index = output_sum % param.size()[0]
+                weights = param[tensor_index].tolist()
+            weight_index = input_sum % len(weights)
+            powv = floor(weights[weight_index] * token_sum)
+            break
+        return powv
+
     def load_model(self) -> None:
         logger.info("Starting to load model %s...", self.model_config.model)
         with CudaMemoryProfiler() as m:
@@ -921,6 +950,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
                                    parallel_config=self.parallel_config,
                                    scheduler_config=self.scheduler_config,
                                    cache_config=self.cache_config)
+            self.model_num_params = sum(1 for _ in self.model.parameters())
 
         self.model_memory_usage = m.consumed_memory
         logger.info("Loading model weights took %.4f GB",
@@ -1494,6 +1524,20 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
             logits=logits,
             sampling_metadata=model_input.sampling_metadata,
         )
+
+        if(model_input.input_positions is not None and model_input.sampling_metadata is not None):
+            seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
+            input_tokens = (
+                model_input.sampling_metadata.seq_groups[0]
+                .seq_data[seq_id]
+                .get_prompt_token_ids()
+            )
+            output_tokens = (
+                model_input.sampling_metadata.seq_groups[0]
+                .seq_data[seq_id]
+                .get_output_token_ids()
+            )
+            output.powv = self.get_powv(VerifyChatCompletion(input_tokens=input_tokens, response_tokens=output_tokens, model=self.model_config.model))
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):

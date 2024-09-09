@@ -34,9 +34,9 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               DetokenizeRequest,
                                               DetokenizeResponse,
                                               EmbeddingRequest,
-                                              EmbeddingResponse, ErrorResponse,
+                                              EmbeddingResponse, ErrorResponse, TokenizeChatRequest,
                                               TokenizeRequest,
-                                              TokenizeResponse)
+                                              TokenizeResponse, VerifyChatCompletion, VerifyChatCompletionResponse, VerifyCompletionResponse)
 # yapf: enable
 from vllm.entrypoints.openai.rpc.client import AsyncEngineRPCClient
 from vllm.entrypoints.openai.rpc.server import run_rpc_server
@@ -280,6 +280,36 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
+@router.post("/v1/chat/completions/verify")
+async def verify_chat_completion(req: VerifyChatCompletionResponse):
+    version = '0.0.0'
+    if req.version != version:
+        return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
+    tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
+    generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
+    if isinstance(generator, ErrorResponse):
+         return JSONResponse(content=generator.model_dump(),
+                             status_code=generator.code)
+    elif not isinstance(generator, TokenizeResponse):
+         return JSONResponse(content=generator.model_dump(), status_code=500)
+    (
+        lora_request,
+        _,
+    ) = openai_serving_tokenization._maybe_get_adapters(tokenize_request)
+
+    tokenizer = await openai_serving_tokenization.async_engine_client.get_tokenizer(lora_request)
+    prompt_tokens = generator.tokens
+    response_tokens = openai_serving_tokenization._tokenize_prompt_input(
+        tokenize_request,
+        tokenizer,
+        req.response,
+        add_special_tokens=False,
+    )['prompt_token_ids']
+    res = await openai_serving_chat.verify_chat_completion(VerifyChatCompletion(model=req.model, input_tokens=prompt_tokens, response_tokens=response_tokens, powv=req.powv))
+    return JSONResponse(content=res == req.powv and req.powv is not None)
+
+
+
 @router.post("/v1/chat/completions")
 async def create_chat_completion(request: ChatCompletionRequest,
                                  raw_request: Request):
@@ -308,6 +338,35 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
         return JSONResponse(content=generator.model_dump())
 
     return StreamingResponse(content=generator, media_type="text/event-stream")
+
+@router.post("/v1/completions/verify")
+async def verify_completion(req: VerifyCompletionResponse):
+    version = '0.0.0'
+    if req.version != version:
+        return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
+    tokenize_request = TokenizeChatRequest(prompt=req.prompt, model=req.model)
+    generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
+    if isinstance(generator, ErrorResponse):
+         return JSONResponse(content=generator.model_dump(),
+                             status_code=generator.code)
+    elif not isinstance(generator, TokenizeResponse):
+         return JSONResponse(content=generator.model_dump(), status_code=500)
+    (
+        lora_request,
+        _,
+    ) = openai_serving_tokenization._maybe_get_adapters(tokenize_request)
+
+    tokenizer = await openai_serving_tokenization.async_engine_client.get_tokenizer(lora_request)
+    prompt_tokens = generator.tokens
+    response_tokens = openai_serving_tokenization._tokenize_prompt_input(
+        tokenize_request,
+        tokenizer,
+        req.response,
+        add_special_tokens=False,
+    )['prompt_token_ids']
+    res = await openai_serving_chat.verify_chat_completion(VerifyChatCompletion(model=req.model, input_tokens=prompt_tokens, response_tokens=response_tokens, powv=req.powv))
+    return JSONResponse(content=res == req.powv and req.powv is not None)
+
 
 
 @router.post("/v1/embeddings")

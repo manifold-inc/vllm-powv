@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple, Type, Union
 import torch
 import torch.distributed
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.config import (CacheConfig, DeviceConfig, LoadConfig, LoRAConfig,
                          ModelConfig, ObservabilityConfig, ParallelConfig,
@@ -180,6 +181,9 @@ class Worker(LocalOrDistributedWorkerBase):
 
     def load_model(self):
         self.model_runner.load_model()
+    
+    def verify_output(self, input: VerifyChatCompletion):
+        return self.model_runner.get_powv(input)
 
     def save_sharded_state(
         self,

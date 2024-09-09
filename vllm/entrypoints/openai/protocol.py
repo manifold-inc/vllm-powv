@@ -2,7 +2,7 @@
 # https://github.com/lm-sys/FastChat/blob/168ccc29d3f7edc50823016105c024fe2282732a/fastchat/protocol/openai_api_protocol.py
 import time
 from argparse import Namespace
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
 import torch
 from openai.types.chat import ChatCompletionContentPartParam
@@ -784,6 +784,7 @@ class ChatCompletionResponseStreamChoice(OpenAIBaseModel):
     logprobs: Optional[ChatCompletionLogProbs] = None
     finish_reason: Optional[str] = None
     stop_reason: Optional[Union[int, str]] = None
+    powv: Optional[int] = None
 
 
 class ChatCompletionStreamResponse(OpenAIBaseModel):
@@ -860,6 +861,26 @@ class TokenizeChatRequest(OpenAIBaseModel):
 
     add_generation_prompt: bool = Field(default=True)
     add_special_tokens: bool = Field(default=False)
+
+class VerifyChatCompletion(OpenAIBaseModel):
+    model: str
+    input_tokens: Sequence[int]
+    response_tokens: Sequence[int]
+    powv: Optional[int] = None
+
+class VerifyChatCompletionResponse(OpenAIBaseModel):
+    model: str
+    messages: List[ChatCompletionMessageParam]
+    response: str
+    powv: int
+    version: str
+
+class VerifyCompletionResponse(OpenAIBaseModel):
+    model: str
+    prompt: str
+    response: str
+    powv: int
+    version: str
 
 
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]

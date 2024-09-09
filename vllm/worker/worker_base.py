@@ -9,6 +9,7 @@ import torch
 
 from vllm.config import ObservabilityConfig
 from vllm.distributed import broadcast_tensor_dict, get_pp_group, get_tp_group
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 from vllm.logger import init_logger
 from vllm.lora.request import LoRARequest
 from vllm.model_executor.layers.sampler import SamplerOutput
@@ -69,6 +70,10 @@ class WorkerBase(ABC):
             output = self.execute_model(execute_model_req=None)
             if output is None:
                 return None
+
+    @abstractmethod
+    def verify_output(self,input: VerifyChatCompletion) -> int:
+        raise NotImplementedError
 
     @abstractmethod
     def execute_model(
@@ -448,7 +453,7 @@ class WorkerWrapperBase:
 
         self.worker = worker_class(*args, **kwargs)
         assert self.worker is not None
-
+    
     def execute_method(self, method, *args, **kwargs):
         try:
             target = self if self.worker is None else self.worker
