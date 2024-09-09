@@ -866,7 +866,7 @@ class VerifyChatCompletion(OpenAIBaseModel):
     model: str
     input_tokens: Sequence[int]
     response_tokens: Sequence[int]
-    powv: int
+    powv: Optional[int]
 
 class VerifyChatCompletionResponse(OpenAIBaseModel):
     model: str
