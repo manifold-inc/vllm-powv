@@ -1537,7 +1537,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                 .seq_data[seq_id]
                 .get_output_token_ids()
             )
-            output.powv = self.get_powv(VerifyChatCompletion(input_tokens=input_tokens, output_tokens=output_tokens, model=self.model_config.model))
+            output.powv = self.get_powv(VerifyChatCompletion(input_tokens=input_tokens, response_tokens=output_tokens, model=self.model_config.model))
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):
