@@ -151,8 +151,10 @@ class AsyncEngineRPCServer:
             pickle.dumps(VLLM_RPC_SUCCESS_STR),
         ))
 
-    def verify_response(self, input: VerifyChatCompletion):
-        return self.engine.verify(input)
+    async def verify_response(self,identity, input: VerifyChatCompletion):
+        output =self.engine.verify(input)
+        await self.socket.send_multipart((identity, pickle.dumps(output)),
+                                            copy=False)
 
     def _make_handler_coro(self, identity,
                            message: Frame) -> Coroutine[Any, Any, Never]:
@@ -164,7 +166,7 @@ class AsyncEngineRPCServer:
             return self.generate(identity, request)
 
         elif isinstance(request, RPCVerifyResponse):
-            return self.verify_response(request)
+            return self.verify_response(identity,request)
 
         elif isinstance(request, RPCAbortRequest):
             return self.abort(identity, request)
