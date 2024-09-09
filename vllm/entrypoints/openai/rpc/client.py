@@ -372,7 +372,7 @@ class AsyncEngineRPCClient:
     def errored(self) -> bool:
         return self._errored
 
-    async def verify(self, inputs: VerifyChatCompletion) -> bool:
+    async def verify(self, inputs: VerifyChatCompletion):
         return await self._send_get_data_rpc_request(
             RPCVerifyResponse(**inputs),
             expected_type=bool,

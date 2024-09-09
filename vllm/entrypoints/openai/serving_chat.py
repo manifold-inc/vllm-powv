@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from typing import (AsyncGenerator, AsyncIterator, Callable, Dict, Final, List,
+from typing import (AsyncGenerator, AsyncIterator, Callable, Coroutine, Dict, Final, List,
                     Optional)
 from typing import Sequence as GenericSequence
 from typing import Union
@@ -86,7 +86,7 @@ class OpenAIServingChat(OpenAIServing):
                 raise TypeError("Error: --enable-auto-tool-choice requires "
                                 "--tool-call-parser")
 
-    async def verify_chat_completion(self, request: VerifyChatCompletion):
+    def verify_chat_completion(self, request: VerifyChatCompletion):
         verified = self.async_engine_client.verify(
             request,
         )

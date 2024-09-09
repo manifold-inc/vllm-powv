@@ -1,4 +1,5 @@
-from typing import (AsyncGenerator, List, Mapping, Optional, Protocol,
+import types
+from typing import (AsyncGenerator, Coroutine, List, Mapping, Optional, Protocol,
                     runtime_checkable)
 
 from vllm.config import DecodingConfig, ModelConfig
@@ -37,7 +38,7 @@ class AsyncEngineClient(Protocol):
     def verify(
         self,
         inputs: VerifyChatCompletion,
-    ) -> bool:
+    ) -> Coroutine[None, None, bool]:
         """Verify outputs for a request"""
         ...
 
