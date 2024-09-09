@@ -874,6 +874,12 @@ class VerifyChatCompletionResponse(OpenAIBaseModel):
     response: str
     powv: int
 
+class VerifyCompletionResponse(OpenAIBaseModel):
+    model: str
+    prompt: str
+    response: str
+    powv: int
+
 
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]
 

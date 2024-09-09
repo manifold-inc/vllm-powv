@@ -336,6 +336,32 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
 
     return StreamingResponse(content=generator, media_type="text/event-stream")
 
+@router.post("/v1/completions/verify")
+async def verify_chat_completion(req: VerifyChatCompletionResponse):
+    tokenize_request = TokenizeChatRequest(prompt=req.prompt, model=req.model)
+    generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
+    if isinstance(generator, ErrorResponse):
+         return JSONResponse(content=generator.model_dump(),
+                             status_code=generator.code)
+    elif not isinstance(generator, TokenizeResponse):
+         return JSONResponse(content=generator.model_dump(), status_code=500)
+    (
+        lora_request,
+        _,
+    ) = openai_serving_tokenization._maybe_get_adapters(tokenize_request)
+
+    tokenizer = await openai_serving_tokenization.async_engine_client.get_tokenizer(lora_request)
+    prompt_tokens = generator.tokens
+    response_tokens = openai_serving_tokenization._tokenize_prompt_input(
+        tokenize_request,
+        tokenizer,
+        req.response,
+        add_special_tokens=False,
+    )['prompt_token_ids']
+    res = await openai_serving_chat.verify_chat_completion(VerifyChatCompletion(model=req.model, input_tokens=prompt_tokens, response_tokens=response_tokens, powv=req.powv))
+    return JSONResponse(content=res == req.powv and req.powv is not None)
+
+
 
 @router.post("/v1/embeddings")
 async def create_embedding(request: EmbeddingRequest, raw_request: Request):
