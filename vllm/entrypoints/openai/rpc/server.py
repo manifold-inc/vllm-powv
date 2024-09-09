@@ -152,7 +152,7 @@ class AsyncEngineRPCServer:
         ))
 
     async def verify_response(self, input: VerifyChatCompletion):
-        return self.engine.verify(input)
+        return await self.engine.verify(input)
 
     def _make_handler_coro(self, identity,
                            message: Frame) -> Coroutine[Any, Any, Never]:
