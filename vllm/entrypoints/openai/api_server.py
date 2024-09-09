@@ -303,7 +303,7 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
         add_special_tokens=False,
     )['prompt_token_ids']
     res = await openai_serving_chat.verify_chat_completion(VerifyChatCompletion(model=req.model, input_tokens=prompt_tokens, response_tokens=response_tokens, powv=req.powv))
-    return JSONResponse(content=res)
+    return JSONResponse(content=res == req.powv and req.powv is not None)
 
 
 

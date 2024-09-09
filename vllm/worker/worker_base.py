@@ -72,7 +72,7 @@ class WorkerBase(ABC):
                 return None
 
     @abstractmethod
-    def verify_output(self,input: VerifyChatCompletion) -> bool:
+    def verify_output(self,input: VerifyChatCompletion) -> int:
         raise NotImplementedError
 
     @abstractmethod

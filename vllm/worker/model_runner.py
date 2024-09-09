@@ -917,7 +917,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
     def get_powv(
         self,
         input: VerifyChatCompletion,
-    ) -> Optional[int]:
+    ) -> int:
         """
         Calculates Proof of Work value that can be used to verify the outputs
         of a model were made with the model claimed.

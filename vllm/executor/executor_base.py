@@ -84,7 +84,7 @@ class ExecutorBase(ABC):
     @abstractmethod
     def verify_output(
         self, input: VerifyChatCompletion
-    ) -> bool:
+    ) -> Optional[int]:
         """Verify output response"""
         raise NotImplementedError
 

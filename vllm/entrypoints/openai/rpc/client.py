@@ -378,7 +378,7 @@ class AsyncEngineRPCClient:
                 model=inputs.model, 
                 input_tokens=inputs.input_tokens,
                 response_tokens=inputs.response_tokens),
-            expected_type=bool,
+            expected_type=Optional[int],
             error_message="Failed to verify response")
 
     async def generate(

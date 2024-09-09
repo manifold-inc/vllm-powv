@@ -1001,7 +1001,7 @@ class AsyncLLMEngine:
     def verify(
         self,
         inputs: VerifyChatCompletion,
-    ) -> bool:
+    ) -> Optional[int]:
         """Verifies outputs for a request."""
         return self.engine.verify_chat_completion(inputs)
 

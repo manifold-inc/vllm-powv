@@ -38,7 +38,7 @@ class AsyncEngineClient(Protocol):
     def verify(
         self,
         inputs: VerifyChatCompletion,
-    ) -> Coroutine[None, None, bool]:
+    ) -> Coroutine[None, None, int]:
         """Verify outputs for a request"""
         ...
 

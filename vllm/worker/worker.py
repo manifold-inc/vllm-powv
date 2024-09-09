@@ -183,7 +183,7 @@ class Worker(LocalOrDistributedWorkerBase):
         self.model_runner.load_model()
     
     def verify_output(self, input: VerifyChatCompletion):
-        return self.model_runner.get_powv(input) == input.powv and input.powv is not None
+        return self.model_runner.get_powv(input)
 
     def save_sharded_state(
         self,
