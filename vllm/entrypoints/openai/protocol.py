@@ -862,6 +862,11 @@ class TokenizeChatRequest(OpenAIBaseModel):
     add_generation_prompt: bool = Field(default=True)
     add_special_tokens: bool = Field(default=False)
 
+class VerifyChatCompletion(OpenAIBaseModel):
+    model: str
+    input_tokens: List[int]
+    response_tokens: List[int]
+    powv: int
 
 class VerifyChatCompletionResponse(OpenAIBaseModel):
     model: str

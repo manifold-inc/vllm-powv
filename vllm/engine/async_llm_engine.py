@@ -6,6 +6,7 @@ from typing import (Any, AsyncGenerator, Callable, Dict, Iterable, List,
 
 from typing_extensions import assert_never
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.config import (DecodingConfig, EngineConfig, LoRAConfig, ModelConfig,
                          ParallelConfig, SchedulerConfig)
@@ -996,6 +997,14 @@ class AsyncLLMEngine:
             prompt_adapter_request=prompt_adapter_request)
 
         return stream.generator()
+
+    async def verify(
+        self,
+        inputs: VerifyChatCompletion,
+    ) -> bool:
+        """Verifies outputs for a request."""
+        output = self.engine.verify_chat_completion( inputs )
+        return output
 
     async def generate(
         self,

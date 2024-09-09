@@ -15,6 +15,7 @@ import torch.distributed
 import torch.nn as nn
 from math import floor
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.attention import AttentionMetadata, get_attn_backend
 from vllm.attention.backends.abstract import AttentionState
@@ -915,30 +916,15 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
 
     def get_powv(
         self,
-        model_input: ModelInputForGPUWithSamplingMetadata,
+        input: VerifyChatCompletion,
     ) -> Optional[int]:
         """
         Calculates Proof of Work value that can be used to verify the outputs
         of a model were made with the model claimed.
         """
-        if(model_input.input_positions is None):
-            return None
-        if(model_input.sampling_metadata is None):
-            return None
         powv = 0
-        seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
-        input_tokens = (
-            model_input.sampling_metadata.seq_groups[0]
-            .seq_data[seq_id]
-            .get_prompt_token_ids()
-        )
-        output_tokens = (
-            model_input.sampling_metadata.seq_groups[0]
-            .seq_data[seq_id]
-            .get_output_token_ids()
-        )
-        input_sum = sum(input_tokens)
-        output_sum = sum(output_tokens)
+        input_sum = sum(input.input_tokens)
+        output_sum = sum(input.output_tokens)
         token_sum = input_sum + output_sum
         param_index = token_sum % self.model_num_params
         for k, param in enumerate(self.model.parameters()):
@@ -1538,7 +1524,20 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
             logits=logits,
             sampling_metadata=model_input.sampling_metadata,
         )
-        output.powv = self.get_powv(model_input)
+
+        if(model_input.input_positions is not None and model_input.sampling_metadata is not None):
+            seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
+            input_tokens = (
+                model_input.sampling_metadata.seq_groups[0]
+                .seq_data[seq_id]
+                .get_prompt_token_ids()
+            )
+            output_tokens = (
+                model_input.sampling_metadata.seq_groups[0]
+                .seq_data[seq_id]
+                .get_output_token_ids()
+            )
+            output.powv = self.get_powv(VerifyChatCompletion(input_tokens=input_tokens, output_tokens=output_tokens))
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):

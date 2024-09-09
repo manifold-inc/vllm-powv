@@ -36,7 +36,7 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               EmbeddingRequest,
                                               EmbeddingResponse, ErrorResponse, TokenizeChatRequest,
                                               TokenizeRequest,
-                                              TokenizeResponse, VerifyChatCompletionResponse)
+                                              TokenizeResponse, VerifyChatCompletion, VerifyChatCompletionResponse)
 # yapf: enable
 from vllm.entrypoints.openai.rpc.client import AsyncEngineRPCClient
 from vllm.entrypoints.openai.rpc.server import run_rpc_server
@@ -302,7 +302,8 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
         req.response,
         add_special_tokens=False,
     )['prompt_token_ids']
-    return JSONResponse(content=[prompt_tokens, response_tokens])
+    res = await openai_serving_chat.verify_chat_completion(VerifyChatCompletion(model=req.model, input_tokens=prompt_tokens, response_tokens=response_tokens, powv=req.powv))
+    return JSONResponse(content=res)
 
 
 

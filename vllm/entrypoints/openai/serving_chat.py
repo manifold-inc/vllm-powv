@@ -21,7 +21,7 @@ from vllm.entrypoints.openai.protocol import (
     ChatCompletionRequest, ChatCompletionResponse,
     ChatCompletionResponseChoice, ChatCompletionResponseStreamChoice,
     ChatCompletionStreamResponse, ChatMessage, DeltaFunctionCall, DeltaMessage,
-    DeltaToolCall, ErrorResponse, FunctionCall, ToolCall, UsageInfo)
+    DeltaToolCall, ErrorResponse, FunctionCall, ToolCall, UsageInfo, VerifyChatCompletion)
 from vllm.entrypoints.openai.serving_engine import (LoRAModulePath,
                                                     OpenAIServing,
                                                     PromptAdapterPath,
@@ -85,6 +85,13 @@ class OpenAIServingChat(OpenAIServing):
             else:
                 raise TypeError("Error: --enable-auto-tool-choice requires "
                                 "--tool-call-parser")
+
+    async def verify_chat_completion(self, request: VerifyChatCompletion):
+        verified = self.async_engine_client.verify(
+            request,
+        )
+        return verified
+
 
     async def create_chat_completion(
         self,
