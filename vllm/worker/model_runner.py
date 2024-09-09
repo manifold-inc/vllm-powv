@@ -924,7 +924,7 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
         """
         powv = 0
         input_sum = sum(input.input_tokens)
-        output_sum = sum(input.output_tokens)
+        output_sum = sum(input.response_tokens)
         token_sum = input_sum + output_sum
         param_index = token_sum % self.model_num_params
         for k, param in enumerate(self.model.parameters()):
