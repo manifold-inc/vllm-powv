@@ -374,7 +374,10 @@ class AsyncEngineRPCClient:
 
     async def verify(self, inputs: VerifyChatCompletion):
         return await self._send_get_data_rpc_request(
-            RPCVerifyResponse(**inputs),
+            RPCVerifyResponse(
+                model=inputs.model, 
+                input_tokens=inputs.input_tokens,
+                response_tokens=inputs.response_tokens),
             expected_type=bool,
             error_message="Failed to verify response")
 
