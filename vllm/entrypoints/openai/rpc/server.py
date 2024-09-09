@@ -5,6 +5,7 @@ from typing import Any, Coroutine, Union
 
 import cloudpickle
 import uvloop
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import zmq
 import zmq.asyncio
 from typing_extensions import Never
@@ -16,7 +17,7 @@ from vllm.config import (DecodingConfig, LoRAConfig, ModelConfig,
                          ParallelConfig, SchedulerConfig)
 from vllm.entrypoints.openai.rpc import (VLLM_RPC_SUCCESS_STR,
                                          VLLM_RPC_ZMQ_HWM, RPCAbortRequest,
-                                         RPCGenerateRequest, RPCUtilityRequest)
+                                         RPCGenerateRequest, RPCUtilityRequest, RPCVerifyResponse)
 from vllm.logger import init_logger
 from vllm.usage.usage_lib import UsageContext
 
@@ -150,6 +151,9 @@ class AsyncEngineRPCServer:
             pickle.dumps(VLLM_RPC_SUCCESS_STR),
         ))
 
+    async def verify_response(self, input: VerifyChatCompletion):
+        return self.engine.verify(input)
+
     def _make_handler_coro(self, identity,
                            message: Frame) -> Coroutine[Any, Any, Never]:
         """Route the zmq message to the handler coroutine."""
@@ -158,6 +162,9 @@ class AsyncEngineRPCServer:
 
         if isinstance(request, RPCGenerateRequest):
             return self.generate(identity, request)
+
+        elif isinstance(request, RPCVerifyResponse):
+            return self.verify_response(request)
 
         elif isinstance(request, RPCAbortRequest):
             return self.abort(identity, request)
