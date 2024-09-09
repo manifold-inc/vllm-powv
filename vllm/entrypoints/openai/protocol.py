@@ -873,12 +873,14 @@ class VerifyChatCompletionResponse(OpenAIBaseModel):
     messages: List[ChatCompletionMessageParam]
     response: str
     powv: int
+    version: str
 
 class VerifyCompletionResponse(OpenAIBaseModel):
     model: str
     prompt: str
     response: str
     powv: int
+    version: str
 
 
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]

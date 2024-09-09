@@ -36,7 +36,7 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               EmbeddingRequest,
                                               EmbeddingResponse, ErrorResponse, TokenizeChatRequest,
                                               TokenizeRequest,
-                                              TokenizeResponse, VerifyChatCompletion, VerifyChatCompletionResponse)
+                                              TokenizeResponse, VerifyChatCompletion, VerifyChatCompletionResponse, VerifyCompletionResponse)
 # yapf: enable
 from vllm.entrypoints.openai.rpc.client import AsyncEngineRPCClient
 from vllm.entrypoints.openai.rpc.server import run_rpc_server
@@ -282,6 +282,9 @@ async def show_version():
 
 @router.post("/v1/chat/completions/verify")
 async def verify_chat_completion(req: VerifyChatCompletionResponse):
+    version = '0.0.0'
+    if req.version != version:
+        return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
     tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
     if isinstance(generator, ErrorResponse):
@@ -337,7 +340,10 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
     return StreamingResponse(content=generator, media_type="text/event-stream")
 
 @router.post("/v1/completions/verify")
-async def verify_chat_completion(req: VerifyChatCompletionResponse):
+async def verify_completion(req: VerifyCompletionResponse):
+    version = '0.0.0'
+    if req.version != version:
+        return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
     tokenize_request = TokenizeChatRequest(prompt=req.prompt, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
     if isinstance(generator, ErrorResponse):
