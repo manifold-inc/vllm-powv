@@ -998,13 +998,12 @@ class AsyncLLMEngine:
 
         return stream.generator()
 
-    async def verify(
+    def verify(
         self,
         inputs: VerifyChatCompletion,
     ) -> bool:
         """Verifies outputs for a request."""
-        output = self.engine.verify_chat_completion( inputs )
-        return output
+        return self.engine.verify_chat_completion(inputs)
 
     async def generate(
         self,

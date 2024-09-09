@@ -151,8 +151,8 @@ class AsyncEngineRPCServer:
             pickle.dumps(VLLM_RPC_SUCCESS_STR),
         ))
 
-    async def verify_response(self, input: VerifyChatCompletion):
-        return await self.engine.verify(input)
+    def verify_response(self, input: VerifyChatCompletion):
+        return self.engine.verify(input)
 
     def _make_handler_coro(self, identity,
                            message: Frame) -> Coroutine[Any, Any, Never]:
