@@ -282,7 +282,7 @@ async def show_version():
 
 @router.post("/v1/chat/completions/verify")
 async def verify_chat_completion(req: VerifyChatCompletionResponse):
-    version = '0.0.0'
+    version = '1'
     if req.version != version:
         return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
     tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
