@@ -301,6 +301,7 @@ class OpenAIServingCompletion(OpenAIServing):
                                 logprobs=logprobs,
                                 finish_reason=finish_reason,
                                 stop_reason=stop_reason,
+                                powv=res.powv
                             )
                         ])
                     if (request.stream_options

@@ -663,6 +663,7 @@ class CompletionResponseStreamChoice(OpenAIBaseModel):
             "to stop, None if the completion finished for some other reason "
             "including encountering the EOS token"),
     )
+    powv: Optional[int] = None
 
 
 class CompletionStreamResponse(OpenAIBaseModel):
