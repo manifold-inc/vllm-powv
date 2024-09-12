@@ -872,14 +872,14 @@ class VerifyChatCompletion(OpenAIBaseModel):
 class VerifyChatCompletionResponse(OpenAIBaseModel):
     model: str
     messages: List[ChatCompletionMessageParam]
-    response: str
+    response: Union[str, List[str]]
     powv: int
     version: str
 
 class VerifyCompletionResponse(OpenAIBaseModel):
     model: str
     prompt: str
-    response: str
+    response: Union[str, List[str]]
     powv: int
     version: str
 
