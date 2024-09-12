@@ -313,7 +313,7 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
     if isinstance(req.response, list):
         response_tokens = [
             tokenizer(token, add_special_tokens=False).input_ids[0]
-            for token in req.response
+            for token in req.response if token != ''
         ]
     else:
         response_tokens = tokenizer(req.response, add_special_tokens=False).input_ids
