@@ -34,7 +34,7 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               DetokenizeRequest,
                                               DetokenizeResponse,
                                               EmbeddingRequest,
-                                              EmbeddingResponse, ErrorResponse, TokenizeChatRequest,
+                                              EmbeddingResponse, ErrorResponse, TokenizeChatRequest, TokenizeCompletionRequest,
                                               TokenizeRequest,
                                               TokenizeResponse, VerifyChatCompletion, VerifyChatCompletionResponse, VerifyCompletionResponse)
 # yapf: enable
@@ -283,7 +283,7 @@ POWV_VERIFY_VERSION='1'
 @router.post("/v1/chat/completions/verify")
 async def verify_chat_completion(req: VerifyChatCompletionResponse):
     if str(req.version) != POWV_VERIFY_VERSION:
-        return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
+        return JSONResponse(content=f"Bad version. Got {req.version}, need {POWV_VERIFY_VERSION}.")
     tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
     if isinstance(generator, ErrorResponse):
@@ -341,8 +341,8 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
 @router.post("/v1/completions/verify")
 async def verify_completion(req: VerifyCompletionResponse):
     if str(req.version) != POWV_VERIFY_VERSION:
-        return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
-    tokenize_request = TokenizeChatRequest(prompt=req.prompt, model=req.model)
+        return JSONResponse(content=f"Bad version. Got {req.version}, need {POWV_VERIFY_VERSION}.")
+    tokenize_request = TokenizeCompletionRequest(prompt=req.prompt, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
     if isinstance(generator, ErrorResponse):
          return JSONResponse(content=generator.model_dump(),
