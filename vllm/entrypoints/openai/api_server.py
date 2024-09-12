@@ -279,11 +279,10 @@ async def show_version():
     ver = {"version": VLLM_VERSION}
     return JSONResponse(content=ver)
 
-
+POWV_VERIFY_VERSION='1'
 @router.post("/v1/chat/completions/verify")
 async def verify_chat_completion(req: VerifyChatCompletionResponse):
-    version = '1'
-    if req.version != version:
+    if str(req.version) != POWV_VERIFY_VERSION:
         return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
     tokenize_request = TokenizeChatRequest(messages=req.messages, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
@@ -341,8 +340,7 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
 
 @router.post("/v1/completions/verify")
 async def verify_completion(req: VerifyCompletionResponse):
-    version = '0.0.0'
-    if req.version != version:
+    if str(req.version) != POWV_VERIFY_VERSION:
         return JSONResponse(content=f"Bad version. Got {req.version}, need {version}.")
     tokenize_request = TokenizeChatRequest(prompt=req.prompt, model=req.model)
     generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
