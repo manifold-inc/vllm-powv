@@ -935,6 +935,9 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
             else:
                 tensor_index = output_sum % param.size()[0]
                 weights = param[tensor_index].tolist()
+            if len(weights) == 0:
+                param_index += 1
+                continue
             weight_index = input_sum % len(weights)
             powv = floor(weights[weight_index] * token_sum)
             break
