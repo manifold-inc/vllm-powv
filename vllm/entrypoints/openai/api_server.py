@@ -35,9 +35,15 @@ from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
                                               DetokenizeRequest,
                                               DetokenizeResponse,
                                               EmbeddingRequest,
-                                              EmbeddingResponse, ErrorResponse, TokenizeChatRequest, TokenizeCompletionRequest,
+                                              EmbeddingResponse, 
+                                              ErrorResponse, 
+                                              TokenizeChatRequest, 
+                                              TokenizeCompletionRequest,
                                               TokenizeRequest,
-                                              TokenizeResponse, VerifyChatCompletion, VerifyChatCompletionResponse, VerifyCompletionResponse)
+                                              TokenizeResponse, 
+                                              VerifyChatCompletion, 
+                                              VerifyChatCompletionResponse, 
+                                              VerifyCompletionResponse)
 # yapf: enable
 from vllm.entrypoints.openai.rpc.client import AsyncEngineRPCClient
 from vllm.entrypoints.openai.rpc.server import run_rpc_server
@@ -309,14 +315,17 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
         lora_request
     )
     prompt_tokens = generator.tokens
+    diff = 0
+    response_tokens = []
+    for token in req.response:
+        t = tokenizer(token[0], add_special_tokens=False).input_ids[0]
+        if t != token[1]:
+            diff += 1 
+        response_tokens.append(token[1])
 
-    if isinstance(req.response, list):
-        response_tokens = [
-            tokenizer(token, add_special_tokens=False).input_ids[0]
-            for token in req.response if token != ''
-        ]
-    else:
-        response_tokens = tokenizer(req.response, add_special_tokens=False).input_ids
+    if diff / len(req.response) > .05:
+        return False
+
     res = await openai_serving_chat.verify_chat_completion(
         VerifyChatCompletion(
             model=req.model,
@@ -325,7 +334,7 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
             powv=req.powv,
         )
     )
-    return JSONResponse(content=res == req.powv and req.powv is not None)
+    return JSONResponse(content=(res == req.powv))
 
 
 @router.post("/v1/chat/completions")
@@ -373,13 +382,17 @@ async def verify_completion(req: VerifyCompletionResponse):
         lora_request
     )
     prompt_tokens = generator.tokens
-    if isinstance(req.response, list):
-        response_tokens = [
-            tokenizer(token, add_special_tokens=False).input_ids[0]
-            for token in req.response if token != ''
-        ]
-    else:
-        response_tokens = tokenizer(req.response, add_special_tokens=False).input_ids
+    diff = 0
+    response_tokens = []
+    for token in req.response:
+        t = tokenizer(token[0], add_special_tokens=False).input_ids[0]
+        if t != token[1]:
+            diff += 1 
+        response_tokens.append(token[1])
+
+    if diff / len(req.response) > .05:
+        return False
+
     res = await openai_serving_chat.verify_chat_completion(
         VerifyChatCompletion(
             model=req.model,
@@ -388,7 +401,7 @@ async def verify_completion(req: VerifyCompletionResponse):
             powv=req.powv,
         )
     )
-    return JSONResponse(content=res == req.powv and req.powv is not None)
+    return JSONResponse(content=(res == req.powv))
 
 
 @router.post("/v1/embeddings")

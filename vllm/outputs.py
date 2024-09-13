@@ -1,6 +1,6 @@
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from typing import Sequence as GenericSequence
 from typing import Union
 
@@ -100,7 +100,7 @@ class RequestOutput:
         lora_request: Optional[LoRARequest] = None,
         encoder_prompt: Optional[str] = None,
         encoder_prompt_token_ids: Optional[List[int]] = None,
-        powv: Optional[int] = None
+        powv: Optional[Tuple[int, int ]] = None
     ) -> None:
         self.request_id = request_id
         self.prompt = prompt
@@ -112,7 +112,7 @@ class RequestOutput:
         self.lora_request = lora_request
         self.encoder_prompt = encoder_prompt
         self.encoder_prompt_token_ids = encoder_prompt_token_ids
-        self.powv: Optional[int] = powv
+        self.powv: Optional[Tuple[int, int]] = powv
 
     @classmethod
     def from_seq_group(cls, seq_group: SequenceGroup) -> "RequestOutput":
@@ -196,7 +196,7 @@ class EmbeddingRequestOutput:
     """
 
     def __init__(self, request_id: str, outputs: "EmbeddingOutput",
-                 prompt_token_ids: List[int], finished: bool, powv: Optional[int]=None):
+                 prompt_token_ids: List[int], finished: bool, powv: Optional[Tuple[int, int]]=None):
         self.request_id = request_id
         self.prompt_token_ids = prompt_token_ids
         self.finished = finished

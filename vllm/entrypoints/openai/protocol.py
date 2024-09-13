@@ -2,7 +2,7 @@
 # https://github.com/lm-sys/FastChat/blob/168ccc29d3f7edc50823016105c024fe2282732a/fastchat/protocol/openai_api_protocol.py
 import time
 from argparse import Namespace
-from typing import Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
 import torch
 from openai.types.chat import ChatCompletionContentPartParam
@@ -663,7 +663,7 @@ class CompletionResponseStreamChoice(OpenAIBaseModel):
             "to stop, None if the completion finished for some other reason "
             "including encountering the EOS token"),
     )
-    powv: Optional[int] = None
+    powv: Optional[Tuple[ int, int]] = None
 
 
 class CompletionStreamResponse(OpenAIBaseModel):
@@ -872,14 +872,14 @@ class VerifyChatCompletion(OpenAIBaseModel):
 class VerifyChatCompletionResponse(OpenAIBaseModel):
     model: str
     messages: List[ChatCompletionMessageParam]
-    response: Union[str, List[str]]
+    response: List[Tuple[str, int]]
     powv: int
     version: str
 
 class VerifyCompletionResponse(OpenAIBaseModel):
     model: str
     prompt: str
-    response: Union[str, List[str]]
+    response: List[Tuple[str, int]]
     powv: int
     version: str
 
