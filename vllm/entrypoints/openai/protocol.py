@@ -786,7 +786,7 @@ class ChatCompletionResponseStreamChoice(OpenAIBaseModel):
     finish_reason: Optional[str] = None
     stop_reason: Optional[Union[int, str]] = None
     powv: Optional[int] = None
-    token_ids: List[int]
+    token_ids: Optional[List[int]] = None
 
 
 class ChatCompletionStreamResponse(OpenAIBaseModel):
