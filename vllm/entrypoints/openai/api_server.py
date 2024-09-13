@@ -318,12 +318,12 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
     diff = 0
     response_tokens = []
     for token in req.response:
-        t = tokenizer(token[0], add_special_tokens=False).input_ids[0]
-        if t != token[1]:
-            diff += 1 
+        t = tokenizer(token[0], add_special_tokens=False).input_ids
+        if len(t) == 0 or t[0] != token[1]:
+            diff += 1
         response_tokens.append(token[1])
 
-    if diff / len(req.response) > .05:
+    if diff / len(req.response) > 0.05:
         return False
 
     res = await openai_serving_chat.verify_chat_completion(
@@ -385,12 +385,12 @@ async def verify_completion(req: VerifyCompletionResponse):
     diff = 0
     response_tokens = []
     for token in req.response:
-        t = tokenizer(token[0], add_special_tokens=False).input_ids[0]
-        if t != token[1]:
-            diff += 1 
+        t = tokenizer(token[0], add_special_tokens=False).input_ids
+        if len(t) == 0 or t[0] != token[1]:
+            diff += 1
         response_tokens.append(token[1])
 
-    if diff / len(req.response) > .05:
+    if diff / len(req.response) > 0.05:
         return False
 
     res = await openai_serving_chat.verify_chat_completion(
