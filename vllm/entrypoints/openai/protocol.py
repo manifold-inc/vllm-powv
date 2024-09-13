@@ -785,7 +785,7 @@ class ChatCompletionResponseStreamChoice(OpenAIBaseModel):
     logprobs: Optional[ChatCompletionLogProbs] = None
     finish_reason: Optional[str] = None
     stop_reason: Optional[Union[int, str]] = None
-    powv: Optional[int] = None
+    powv: Optional[Tuple[int, int]] = None
 
 
 class ChatCompletionStreamResponse(OpenAIBaseModel):
