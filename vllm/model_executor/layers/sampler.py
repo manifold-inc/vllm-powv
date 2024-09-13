@@ -121,7 +121,7 @@ class SamplerOutput(
     # block/sync across workers, cpu-gpu sync time and sampling time.
     model_execute_time: Optional[float] = None
 
-    powv: Optional[Tuple[int, int]] = None
+    powv: Optional[int] = None
 
     def __getitem__(self, idx: int):
         return self.outputs[idx]

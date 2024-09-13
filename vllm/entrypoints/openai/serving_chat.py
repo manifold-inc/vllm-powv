@@ -426,6 +426,7 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
+                            token_ids=delta_token_ids,
                             powv=res.powv,
                             logprobs=logprobs,
                             finish_reason=None)

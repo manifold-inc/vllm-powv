@@ -663,7 +663,7 @@ class CompletionResponseStreamChoice(OpenAIBaseModel):
             "to stop, None if the completion finished for some other reason "
             "including encountering the EOS token"),
     )
-    powv: Optional[Tuple[ int, int]] = None
+    powv: Optional[int] = None
 
 
 class CompletionStreamResponse(OpenAIBaseModel):
@@ -785,7 +785,7 @@ class ChatCompletionResponseStreamChoice(OpenAIBaseModel):
     logprobs: Optional[ChatCompletionLogProbs] = None
     finish_reason: Optional[str] = None
     stop_reason: Optional[Union[int, str]] = None
-    powv: Optional[Tuple[int, int]] = None
+    powv: Optional[int] = None
 
 
 class ChatCompletionStreamResponse(OpenAIBaseModel):
