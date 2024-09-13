@@ -323,8 +323,8 @@ async def verify_chat_completion(req: VerifyChatCompletionResponse):
             diff += 1
         response_tokens.append(token[1])
 
-    if diff / len(req.response) > 0.05:
-        return False
+    if len(req.response) == 0 or diff / len(req.response) > 0.05:
+        return JSONResponse(content=(False))
 
     res = await openai_serving_chat.verify_chat_completion(
         VerifyChatCompletion(
@@ -390,8 +390,8 @@ async def verify_completion(req: VerifyCompletionResponse):
             diff += 1
         response_tokens.append(token[1])
 
-    if diff / len(req.response) > 0.05:
-        return False
+    if len(req.response) == 0 or diff / len(req.response) > 0.05:
+        return JSONResponse(content=(False))
 
     res = await openai_serving_chat.verify_chat_completion(
         VerifyChatCompletion(
