@@ -301,6 +301,7 @@ class OpenAIServingCompletion(OpenAIServing):
                                 logprobs=logprobs,
                                 finish_reason=finish_reason,
                                 stop_reason=stop_reason,
+                                token_ids=delta_token_ids,
                                 powv=res.powv
                             )
                         ])
