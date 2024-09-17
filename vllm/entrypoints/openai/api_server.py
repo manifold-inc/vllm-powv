@@ -291,7 +291,7 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
-POWV_VERIFY_VERSION = "1"
+POWV_VERIFY_VERSION = "2"
 
 
 @router.post("/v1/chat/completions/verify")
