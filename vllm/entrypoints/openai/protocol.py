@@ -664,7 +664,7 @@ class CompletionResponseStreamChoice(OpenAIBaseModel):
             "including encountering the EOS token"),
     )
     powv: Optional[int] = None
-    token_ids: Optional[Sequence[int]]
+    token_ids: Optional[List[int]] = None
 
 
 class CompletionStreamResponse(OpenAIBaseModel):
@@ -787,7 +787,7 @@ class ChatCompletionResponseStreamChoice(OpenAIBaseModel):
     finish_reason: Optional[str] = None
     stop_reason: Optional[Union[int, str]] = None
     powv: Optional[int] = None
-    token_ids: Optional[Sequence[int]] = None
+    token_ids: Optional[List[int]] = None
 
 
 class ChatCompletionStreamResponse(OpenAIBaseModel):
