@@ -1529,19 +1529,20 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
         )
 
         if(model_input.input_positions is not None and model_input.sampling_metadata is not None):
-            seq_id = model_input.sampling_metadata.seq_groups[0].seq_ids[0]
-            input_tokens = (
-                model_input.sampling_metadata.seq_groups[0]
-                .seq_data[seq_id]
-                .get_prompt_token_ids()
-            )
-            output_tokens = (
-                model_input.sampling_metadata.seq_groups[0]
-                .seq_data[seq_id]
-                .get_output_token_ids()
-            )
-            verifyChatCompletion = VerifyChatCompletion(input_tokens=input_tokens, response_tokens=output_tokens, model=self.model_config.model)
-            output.powv = self.get_powv(verifyChatCompletion)
+            for i, o in enumerate(output.outputs):
+                seq_id = model_input.sampling_metadata.seq_groups[i].seq_ids[0]
+                input_tokens = (
+                    model_input.sampling_metadata.seq_groups[i]
+                    .seq_data[seq_id]
+                    .get_prompt_token_ids()
+                )
+                output_tokens = (
+                    model_input.sampling_metadata.seq_groups[i]
+                    .seq_data[seq_id]
+                    .get_output_token_ids()
+                )
+                verifyChatCompletion = VerifyChatCompletion(input_tokens=input_tokens, response_tokens=output_tokens, model=self.model_config.model)
+                o.powv = self.get_powv(verifyChatCompletion)
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):

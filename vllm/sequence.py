@@ -615,7 +615,6 @@ class SequenceGroup:
         self.prompt_adapter_request = prompt_adapter_request
         self.encoder_seq = encoder_seq
         self.trace_headers = trace_headers
-        self.powv: Optional[int] = None
 
     @property
     def prompt(self) -> Optional[str]:
@@ -1000,6 +999,7 @@ class CompletionSequenceGroupOutput(
     samples: List[SequenceOutput]
     # Prompt logprob for each prompt query token.
     prompt_logprobs: Optional[PromptLogprobs]
+    powv: Optional[int] = None
 
     def __repr__(self) -> str:
         return (f"CompletionSequenceGroupOutput(samples={self.samples}, "
