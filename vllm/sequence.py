@@ -595,6 +595,7 @@ class SequenceGroup:
         encoder_seq: Optional[Sequence] = None,
         trace_headers: Optional[Mapping[str, str]] = None,
         prompt_adapter_request: Optional[PromptAdapterRequest] = None,
+        powv: Optional[int] = None
     ) -> None:
         self.request_id = request_id
         self.seqs = seqs
@@ -615,6 +616,7 @@ class SequenceGroup:
         self.prompt_adapter_request = prompt_adapter_request
         self.encoder_seq = encoder_seq
         self.trace_headers = trace_headers
+        self.powv = powv
 
     @property
     def prompt(self) -> Optional[str]:
