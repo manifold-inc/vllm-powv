@@ -375,6 +375,7 @@ class OpenAIServingChat(OpenAIServing):
                                         index=i,
                                         delta=DeltaMessage(
                                             content=last_msg_content),
+                                        token_ids=res.prompt_token_ids,
                                         powv=res.powv,
                                         logprobs=None,
                                         finish_reason=None))
@@ -476,7 +477,7 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
-                            token_ids=delta_token_ids,
+                            token_ids=res.prompt_token_ids,
                             powv=res.powv,
                             logprobs=logprobs,
                             finish_reason=None)
@@ -547,7 +548,7 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
-                            token_ids=delta_token_ids,
+                            token_ids=res.prompt_token_ids,
                             powv=res.powv,
                             logprobs=logprobs,
                             finish_reason=output.finish_reason
