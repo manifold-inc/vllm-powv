@@ -868,21 +868,6 @@ class TokenizeChatRequest(OpenAIBaseModel):
     add_generation_prompt: bool = Field(default=True)
     add_special_tokens: bool = Field(default=False)
 
-class VerifyChatCompletionResponse(OpenAIBaseModel):
-    model: str
-    messages: List[ChatCompletionMessageParam]
-    response: List[Tuple[str, int]]
-    powv: int
-    version: str
-
-class VerifyCompletionResponse(OpenAIBaseModel):
-    model: str
-    prompt: str
-    response: List[Tuple[str, int]]
-    powv: int
-    version: str
-
-
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]
 
 

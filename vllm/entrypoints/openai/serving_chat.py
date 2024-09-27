@@ -92,12 +92,6 @@ class OpenAIServingChat(OpenAIServing):
                 raise TypeError("Error: --enable-auto-tool-choice requires "
                                 "--tool-call-parser")
 
-    def verify_chat_completion(self, request: VerifyChatCompletion):
-        verified = self.async_engine_client.verify(
-            request,
-        )
-        return verified
-
 
     async def create_chat_completion(
         self,

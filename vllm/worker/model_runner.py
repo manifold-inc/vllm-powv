@@ -15,7 +15,6 @@ import torch.distributed
 import torch.nn as nn
 from math import floor
 
-from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.attention import AttentionMetadata, get_attn_backend
 from vllm.attention.backends.abstract import AttentionState
