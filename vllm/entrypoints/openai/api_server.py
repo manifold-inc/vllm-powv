@@ -32,6 +32,7 @@ from vllm.engine.protocol import EngineClient
 from vllm.entrypoints.launcher import serve_http
 from vllm.entrypoints.logger import RequestLogger
 from vllm.entrypoints.openai.cli_args import make_arg_parser
+
 # yapf conflicts with isort for this block
 # yapf: disable
 from vllm.entrypoints.openai.protocol import (ChatCompletionRequest,
@@ -63,7 +64,7 @@ TIMEOUT_KEEP_ALIVE = 5  # seconds
 prometheus_multiproc_dir: tempfile.TemporaryDirectory
 
 # Cannot use __name__ (https://github.com/vllm-project/vllm/pull/4765)
-logger = init_logger('vllm.entrypoints.openai.api_server')
+logger = init_logger("vllm.entrypoints.openai.api_server")
 
 _running_tasks: Set[asyncio.Task] = set()
 
@@ -150,14 +151,14 @@ async def build_async_engine_client_from_engine_args(
             #   cleaned up upon exit.
             global prometheus_multiproc_dir
             prometheus_multiproc_dir = tempfile.TemporaryDirectory()
-            os.environ[
-                "PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir.name
+            os.environ["PROMETHEUS_MULTIPROC_DIR"] = prometheus_multiproc_dir.name
         else:
             logger.warning(
                 "Found PROMETHEUS_MULTIPROC_DIR was set by user. "
                 "This directory must be wiped between vLLM runs or "
                 "you will find inaccurate metrics. Unset the variable "
-                "and vLLM will properly handle cleanup.")
+                "and vLLM will properly handle cleanup."
+            )
 
         # Select random path for IPC.
         ipc_path = get_open_zmq_ipc_path()
@@ -222,13 +223,13 @@ def mount_metrics(app: FastAPI):
     # We need to set PROMETHEUS_MULTIPROC_DIR environment variable
     # before prometheus_client is imported.
     # See https://prometheus.github.io/client_python/multiprocess/
-    from prometheus_client import (CollectorRegistry, make_asgi_app,
-                                   multiprocess)
+    from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
     prometheus_multiproc_dir_path = os.getenv("PROMETHEUS_MULTIPROC_DIR", None)
     if prometheus_multiproc_dir_path is not None:
-        logger.info("vLLM to use %s as PROMETHEUS_MULTIPROC_DIR",
-                    prometheus_multiproc_dir_path)
+        logger.info(
+            "vLLM to use %s as PROMETHEUS_MULTIPROC_DIR", prometheus_multiproc_dir_path
+        )
         registry = CollectorRegistry()
         multiprocess.MultiProcessCollector(registry)
 
@@ -274,8 +275,7 @@ async def health(raw_request: Request) -> Response:
 async def tokenize(request: TokenizeRequest, raw_request: Request):
     generator = await tokenization(raw_request).create_tokenize(request)
     if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(),
-                            status_code=generator.code)
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
     elif isinstance(generator, TokenizeResponse):
         return JSONResponse(content=generator.model_dump())
 
@@ -286,8 +286,7 @@ async def tokenize(request: TokenizeRequest, raw_request: Request):
 async def detokenize(request: DetokenizeRequest, raw_request: Request):
     generator = await tokenization(raw_request).create_detokenize(request)
     if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(),
-                            status_code=generator.code)
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
     elif isinstance(generator, DetokenizeResponse):
         return JSONResponse(content=generator.model_dump())
 
@@ -306,16 +305,13 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
-@router.post("/v1/chat/completions")
-async def create_chat_completion(request: ChatCompletionRequest,
-                                 raw_request: Request):
+POWV_VERIFY_VERSION = "2"
 
     generator = await chat(raw_request).create_chat_completion(
         request, raw_request)
 
     if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(),
-                            status_code=generator.code)
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
 
     elif isinstance(generator, ChatCompletionResponse):
         return JSONResponse(content=generator.model_dump())
@@ -328,12 +324,54 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
     generator = await completion(raw_request).create_completion(
         request, raw_request)
     if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(),
-                            status_code=generator.code)
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
     elif isinstance(generator, CompletionResponse):
         return JSONResponse(content=generator.model_dump())
 
     return StreamingResponse(content=generator, media_type="text/event-stream")
+
+
+@router.post("/v1/completions/verify")
+async def verify_completion(req: VerifyCompletionResponse):
+    if str(req.version) != POWV_VERIFY_VERSION:
+        return JSONResponse(
+            content=f"Bad version. Got {req.version}, need {POWV_VERIFY_VERSION}."
+        )
+    tokenize_request = TokenizeCompletionRequest(prompt=req.prompt, model=req.model)
+    generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
+    if isinstance(generator, ErrorResponse):
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
+    elif not isinstance(generator, TokenizeResponse):
+        return JSONResponse(content=generator.model_dump(), status_code=500)
+    (
+        lora_request,
+        _,
+    ) = openai_serving_tokenization._maybe_get_adapters(tokenize_request)
+
+    tokenizer = await openai_serving_tokenization.async_engine_client.get_tokenizer(
+        lora_request
+    )
+    prompt_tokens = generator.tokens
+    diff = 0
+    response_tokens = []
+    for token in req.response:
+        t = tokenizer(token[0], add_special_tokens=False).input_ids
+        if len(t) == 0 or t[0] != token[1]:
+            diff += 1
+        response_tokens.append(token[1])
+
+    if len(req.response) == 0 or diff / len(req.response) > 0.05:
+        return JSONResponse(content=(False))
+
+    res = await openai_serving_chat.verify_chat_completion(
+        VerifyChatCompletion(
+            model=req.model,
+            input_tokens=prompt_tokens,
+            response_tokens=response_tokens,
+            powv=req.powv,
+        )
+    )
+    return JSONResponse(content=(res == req.powv))
 
 
 @router.post("/v1/embeddings")
@@ -341,8 +379,7 @@ async def create_embedding(request: EmbeddingRequest, raw_request: Request):
     generator = await embedding(raw_request).create_embedding(
         request, raw_request)
     if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(),
-                            status_code=generator.code)
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
     elif isinstance(generator, EmbeddingResponse):
         return JSONResponse(content=generator.model_dump())
 
@@ -352,7 +389,8 @@ async def create_embedding(request: EmbeddingRequest, raw_request: Request):
 if envs.VLLM_TORCH_PROFILER_DIR:
     logger.warning(
         "Torch Profiler is enabled in the API server. This should ONLY be "
-        "used for local development!")
+        "used for local development!"
+    )
 
     @router.post("/start_profile")
     async def start_profile(raw_request: Request):
@@ -443,8 +481,7 @@ def build_app(args: Namespace) -> FastAPI:
             if not request.url.path.startswith(f"{root_path}/v1"):
                 return await call_next(request)
             if request.headers.get("Authorization") != "Bearer " + token:
-                return JSONResponse(content={"error": "Unauthorized"},
-                                    status_code=401)
+                return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
             return await call_next(request)
 
     for middleware in args.middleware:
@@ -455,8 +492,9 @@ def build_app(args: Namespace) -> FastAPI:
         elif inspect.iscoroutinefunction(imported):
             app.middleware("http")(imported)
         else:
-            raise ValueError(f"Invalid middleware {middleware}. "
-                             f"Must be a function or a class.")
+            raise ValueError(
+                f"Invalid middleware {middleware}. " f"Must be a function or a class."
+            )
 
     return app
 
@@ -564,7 +602,8 @@ if __name__ == "__main__":
     # NOTE(simon):
     # This section should be in sync with vllm/scripts.py for CLI entrypoints.
     parser = FlexibleArgumentParser(
-        description="vLLM OpenAI-Compatible RESTful API server.")
+        description="vLLM OpenAI-Compatible RESTful API server."
+    )
     parser = make_arg_parser(parser)
     args = parser.parse_args()
 

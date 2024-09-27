@@ -2,7 +2,7 @@
 # https://github.com/lm-sys/FastChat/blob/168ccc29d3f7edc50823016105c024fe2282732a/fastchat/protocol/openai_api_protocol.py
 import time
 from argparse import Namespace
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import torch
 from openai.types.chat import ChatCompletionContentPartParam
@@ -673,6 +673,8 @@ class CompletionResponseStreamChoice(OpenAIBaseModel):
             "to stop, None if the completion finished for some other reason "
             "including encountering the EOS token"),
     )
+    powv: Optional[int] = None
+    token_ids: Optional[List[int]] = None
 
 
 class CompletionStreamResponse(OpenAIBaseModel):
@@ -787,6 +789,8 @@ class ChatCompletionResponseStreamChoice(OpenAIBaseModel):
     logprobs: Optional[ChatCompletionLogProbs] = None
     finish_reason: Optional[str] = None
     stop_reason: Optional[Union[int, str]] = None
+    powv: Optional[int] = None
+    token_ids: Optional[List[int]] = None
 
 
 class ChatCompletionStreamResponse(OpenAIBaseModel):
@@ -863,6 +867,26 @@ class TokenizeChatRequest(OpenAIBaseModel):
 
     add_generation_prompt: bool = Field(default=True)
     add_special_tokens: bool = Field(default=False)
+
+class VerifyChatCompletion(OpenAIBaseModel):
+    model: str
+    input_tokens: List[int]
+    response_tokens: List[int]
+    powv: Optional[int] = None
+
+class VerifyChatCompletionResponse(OpenAIBaseModel):
+    model: str
+    messages: List[ChatCompletionMessageParam]
+    response: List[Tuple[str, int]]
+    powv: int
+    version: str
+
+class VerifyCompletionResponse(OpenAIBaseModel):
+    model: str
+    prompt: str
+    response: List[Tuple[str, int]]
+    powv: int
+    version: str
 
 
 TokenizeRequest = Union[TokenizeCompletionRequest, TokenizeChatRequest]

@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 from vllm.executor.executor_base import ExecutorAsyncBase, ExecutorBase
 from vllm.logger import init_logger
 from vllm.lora.request import LoRARequest
@@ -129,6 +130,14 @@ class GPUExecutor(ExecutorBase):
     ) -> Optional[List[Union[SamplerOutput, PoolerOutput]]]:
         output = self.driver_worker.execute_model(execute_model_req)
         return output
+
+    def verify_output(
+        self, input: VerifyChatCompletion
+    ) -> bool:
+        """Verify output response"""
+        assert self.driver_worker is not None
+        return self.driver_worker.verify_output(input)
+
 
     def add_lora(self, lora_request: LoRARequest) -> bool:
         assert lora_request.lora_int_id > 0, "lora_id must be greater than 0."

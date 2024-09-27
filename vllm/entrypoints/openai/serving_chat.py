@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from typing import (AsyncGenerator, AsyncIterator, Callable, Dict, Final, List,
+from typing import (AsyncGenerator, AsyncIterator, Callable, Coroutine, Dict, Final, List,
                     Optional)
 from typing import Sequence as GenericSequence
 from typing import Union
@@ -91,6 +91,13 @@ class OpenAIServingChat(OpenAIServing):
             else:
                 raise TypeError("Error: --enable-auto-tool-choice requires "
                                 "--tool-call-parser")
+
+    def verify_chat_completion(self, request: VerifyChatCompletion):
+        verified = self.async_engine_client.verify(
+            request,
+        )
+        return verified
+
 
     async def create_chat_completion(
         self,
@@ -374,6 +381,7 @@ class OpenAIServingChat(OpenAIServing):
                                         index=i,
                                         delta=DeltaMessage(
                                             content=last_msg_content),
+                                        powv=res.powv,
                                         logprobs=None,
                                         finish_reason=None))
                                 chunk = ChatCompletionStreamResponse(
@@ -474,6 +482,8 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
+                            token_ids=delta_token_ids,
+                            powv=res.powv,
                             logprobs=logprobs,
                             finish_reason=None)
                         chunk = ChatCompletionStreamResponse(
@@ -543,6 +553,8 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
+                            token_ids=delta_token_ids,
+                            powv=res.powv,
                             logprobs=logprobs,
                             finish_reason=output.finish_reason
                             if not (tool_parser

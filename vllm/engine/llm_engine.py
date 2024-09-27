@@ -11,6 +11,7 @@ from typing import Set, Type, Union, overload
 import torch
 from typing_extensions import TypeVar
 
+from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.config import (CacheConfig, DecodingConfig, DeviceConfig,
                          EngineConfig, LoadConfig, LoRAConfig, ModelConfig,
@@ -1048,6 +1049,7 @@ class LLMEngine:
                 self._process_sequence_group_outputs(seq_group, output)
             else:
                 self.output_processor.process_prompt_logprob(seq_group, output)
+                seq_group.powv = output[0].powv
                 if seq_group_meta.do_sample:
                     self.output_processor.process_outputs(
                         seq_group, output, is_async)
