@@ -305,6 +305,22 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
+POWV_VERIFY_VERSION = "2"
+
+@router.post("/v1/chat/completions")
+async def create_chat_completion(request: ChatCompletionRequest, raw_request: Request):
+    generator = await chat(raw_request).create_chat_completion(
+        request, raw_request)
+
+    if isinstance(generator, ErrorResponse):
+        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
+
+    elif isinstance(generator, ChatCompletionResponse):
+        return JSONResponse(content=generator.model_dump())
+
+    return StreamingResponse(content=generator, media_type="text/event-stream")
+
+
 @router.post("/v1/completions")
 async def create_completion(request: CompletionRequest, raw_request: Request):
     generator = await completion(raw_request).create_completion(
@@ -315,7 +331,6 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
         return JSONResponse(content=generator.model_dump())
 
     return StreamingResponse(content=generator, media_type="text/event-stream")
-
 
 
 @router.post("/v1/embeddings")
