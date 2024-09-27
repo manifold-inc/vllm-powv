@@ -5,7 +5,6 @@ from vllm.config import (CacheConfig, DeviceConfig, LoadConfig, LoRAConfig,
                          ModelConfig, ObservabilityConfig, ParallelConfig,
                          PromptAdapterConfig, SchedulerConfig,
                          SpeculativeConfig)
-from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 from vllm.lora.request import LoRARequest
 from vllm.model_executor.layers.sampler import SamplerOutput
 from vllm.prompt_adapter.request import PromptAdapterRequest
@@ -79,13 +78,6 @@ class ExecutorBase(ABC):
         self, execute_model_req: ExecuteModelRequest
     ) -> Optional[List[SamplerOutput]]:
         """Executes at least one model step on the given sequences."""
-        raise NotImplementedError
-
-    @abstractmethod
-    def verify_output(
-        self, input: VerifyChatCompletion
-    ) -> Optional[int]:
-        """Verify output response"""
         raise NotImplementedError
 
     def stop_remote_worker_execution_loop(self) -> None:

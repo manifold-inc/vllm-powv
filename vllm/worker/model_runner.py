@@ -1015,15 +1015,16 @@ class GPUModelRunnerBase(ModelRunnerBase[TModelInputForGPU]):
 
     def get_powv(
         self,
-        input: VerifyChatCompletion,
+        input_tokens,
+        response_tokens,
     ) -> int:
         """
         Calculates Proof of Work value that can be used to verify the outputs
         of a model were made with the model claimed.
         """
         powv = 0
-        input_sum = sum(input.input_tokens)
-        output_sum = sum(input.response_tokens)
+        input_sum = sum(input_tokens)
+        output_sum = sum(response_tokens)
         token_sum = input_sum + output_sum
         param_index = token_sum % self.model_num_params
         for k, param in enumerate(self.model.parameters()):
@@ -1687,8 +1688,7 @@ class ModelRunner(GPUModelRunnerBase[ModelInputForGPUWithSamplingMetadata]):
                     .seq_data[seq_id]
                     .get_output_token_ids()
                 )
-                verifyChatCompletion = VerifyChatCompletion(input_tokens=input_tokens, response_tokens=output_tokens, model=self.model_config.model)
-                o.powv = self.get_powv(verifyChatCompletion)
+                o.powv = self.get_powv(input_tokens, output_tokens)
         if (self.observability_config is not None
                 and self.observability_config.collect_model_forward_time
                 and output is not None):

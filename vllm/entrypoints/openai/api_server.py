@@ -305,20 +305,6 @@ async def show_version():
     return JSONResponse(content=ver)
 
 
-POWV_VERIFY_VERSION = "2"
-
-    generator = await chat(raw_request).create_chat_completion(
-        request, raw_request)
-
-    if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
-
-    elif isinstance(generator, ChatCompletionResponse):
-        return JSONResponse(content=generator.model_dump())
-
-    return StreamingResponse(content=generator, media_type="text/event-stream")
-
-
 @router.post("/v1/completions")
 async def create_completion(request: CompletionRequest, raw_request: Request):
     generator = await completion(raw_request).create_completion(
@@ -330,48 +316,6 @@ async def create_completion(request: CompletionRequest, raw_request: Request):
 
     return StreamingResponse(content=generator, media_type="text/event-stream")
 
-
-@router.post("/v1/completions/verify")
-async def verify_completion(req: VerifyCompletionResponse):
-    if str(req.version) != POWV_VERIFY_VERSION:
-        return JSONResponse(
-            content=f"Bad version. Got {req.version}, need {POWV_VERIFY_VERSION}."
-        )
-    tokenize_request = TokenizeCompletionRequest(prompt=req.prompt, model=req.model)
-    generator = await openai_serving_tokenization.create_tokenize(tokenize_request)
-    if isinstance(generator, ErrorResponse):
-        return JSONResponse(content=generator.model_dump(), status_code=generator.code)
-    elif not isinstance(generator, TokenizeResponse):
-        return JSONResponse(content=generator.model_dump(), status_code=500)
-    (
-        lora_request,
-        _,
-    ) = openai_serving_tokenization._maybe_get_adapters(tokenize_request)
-
-    tokenizer = await openai_serving_tokenization.async_engine_client.get_tokenizer(
-        lora_request
-    )
-    prompt_tokens = generator.tokens
-    diff = 0
-    response_tokens = []
-    for token in req.response:
-        t = tokenizer(token[0], add_special_tokens=False).input_ids
-        if len(t) == 0 or t[0] != token[1]:
-            diff += 1
-        response_tokens.append(token[1])
-
-    if len(req.response) == 0 or diff / len(req.response) > 0.05:
-        return JSONResponse(content=(False))
-
-    res = await openai_serving_chat.verify_chat_completion(
-        VerifyChatCompletion(
-            model=req.model,
-            input_tokens=prompt_tokens,
-            response_tokens=response_tokens,
-            powv=req.powv,
-        )
-    )
-    return JSONResponse(content=(res == req.powv))
 
 
 @router.post("/v1/embeddings")

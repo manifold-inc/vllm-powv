@@ -11,7 +11,6 @@ from typing import Set, Type, Union, overload
 import torch
 from typing_extensions import TypeVar
 
-from vllm.entrypoints.openai.protocol import VerifyChatCompletion
 import vllm.envs as envs
 from vllm.config import (CacheConfig, DecodingConfig, DeviceConfig,
                          EngineConfig, LoadConfig, LoRAConfig, ModelConfig,
