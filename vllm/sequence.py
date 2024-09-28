@@ -670,6 +670,7 @@ class SequenceGroup:
         trace_headers: Optional[Mapping[str, str]] = None,
         prompt_adapter_request: Optional[PromptAdapterRequest] = None,
         priority: int = 0,
+        powv: Optional[int] = None
     ) -> None:
         self.request_id = request_id
         self.seqs = seqs
@@ -695,6 +696,7 @@ class SequenceGroup:
 
         self.cached_request_output = None
 
+        self.powv = powv
     @property
     def prompt(self) -> Optional[str]:
         # All sequences in the group should have the same prompt.

@@ -37,6 +37,7 @@ class CompletionOutput:
     finish_reason: Optional[str] = None
     stop_reason: Union[int, str, None] = None
     lora_request: Optional[LoRARequest] = None
+    powv: Optional[int] = None
 
     def finished(self) -> bool:
         return self.finish_reason is not None
@@ -211,6 +212,7 @@ class RequestOutput:
                 output.finish_reason = SequenceStatus.get_finished_reason(
                     seq.status)
                 output.stop_reason = seq.stop_reason
+                output.powv = seq_group.powv
 
             else:
                 output = CompletionOutput(
@@ -219,7 +221,7 @@ class RequestOutput:
                     seq.get_cumulative_logprob() if include_logprobs else None,
                     output_logprobs,
                     SequenceStatus.get_finished_reason(seq.status),
-                    seq.stop_reason)
+                    seq.stop_reason, powv=seq_group.powv)
 
             outputs.append(output)
 
