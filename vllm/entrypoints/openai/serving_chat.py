@@ -421,7 +421,6 @@ class OpenAIServingChat(OpenAIServing):
 
                     delta_text = output.text
                     delta_message: Optional[DeltaMessage]
-                    delta_token_ids = output.token_ids[previous_num_tokens[i]:]
 
                     # handle streaming deltas for tools with named tool_choice
                     if tool_choice_function_name:
@@ -477,7 +476,7 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
-                            token_ids=delta_token_ids,
+                            token_ids=output.token_ids,
                             powv=output.powv,
                             logprobs=logprobs,
                             finish_reason=None)
@@ -548,7 +547,7 @@ class OpenAIServingChat(OpenAIServing):
                         choice_data = ChatCompletionResponseStreamChoice(
                             index=i,
                             delta=delta_message,
-                            token_ids=delta_token_ids,
+                            token_ids=output.token_ids,
                             powv=output.powv,
                             logprobs=logprobs,
                             finish_reason=output.finish_reason
